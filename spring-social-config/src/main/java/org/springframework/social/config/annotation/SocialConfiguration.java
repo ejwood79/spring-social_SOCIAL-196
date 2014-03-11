@@ -21,29 +21,34 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.core.env.Environment;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.social.UserIdSource;
 import org.springframework.social.connect.ConnectionFactoryLocator;
 import org.springframework.social.connect.ConnectionRepository;
 import org.springframework.social.connect.UsersConnectionRepository;
+import org.springframework.social.support.DefaultSocialHttpRequestFactory;
 import org.springframework.util.Assert;
 
 /**
  * Configuration class imported by {@link EnableSocial}.
+ * 
  * @author Craig Walls
  */
 @Configuration
 public class SocialConfiguration {
 
 	private static boolean securityEnabled = isSocialSecurityAvailable();
-	
+
 	@Autowired
 	private Environment environment;
-	
+
 	private SocialConfigurer socialConfigurer;
 
 	@Autowired
 	public void setSocialConfigurer(SocialConfigurer socialConfigurer) {
-		Assert.notNull(socialConfigurer, "One configuration class must implement SocialConfigurer (or subclass SocialConfigurerAdapter)");
+		Assert.notNull(
+				socialConfigurer,
+				"One configuration class must implement SocialConfigurer (or subclass SocialConfigurerAdapter)");
 		this.socialConfigurer = socialConfigurer;
 	}
 
@@ -59,21 +64,23 @@ public class SocialConfiguration {
 			return cfConfig.getConnectionFactoryLocator();
 		}
 	}
-	
+
 	@Bean
 	public UserIdSource userIdSource() {
 		return socialConfigurer.getUserIdSource();
 	}
-	
+
 	@Bean
 	public UsersConnectionRepository usersConnectionRepository() {
-		return socialConfigurer.getUsersConnectionRepository(connectionFactoryLocator());
+		return socialConfigurer
+				.getUsersConnectionRepository(connectionFactoryLocator());
 	}
 
 	@Bean
-	@Scope(value="request", proxyMode=ScopedProxyMode.INTERFACES)
+	@Scope(value = "request", proxyMode = ScopedProxyMode.INTERFACES)
 	public ConnectionRepository connectionRepository() {
-		return usersConnectionRepository().createConnectionRepository(userIdSource().getUserId());
+		return usersConnectionRepository().createConnectionRepository(
+				userIdSource().getUserId());
 	}
 
 	private static boolean isSocialSecurityAvailable() {
@@ -81,8 +88,12 @@ public class SocialConfiguration {
 			Class.forName("org.springframework.social.security.SocialAuthenticationServiceLocator");
 			return true;
 		} catch (ClassNotFoundException cnfe) {
-			return false; 
+			return false;
 		}
 	}
 
+	@Bean
+	public ClientHttpRequestFactory getDefaultClientHttpRequestFactory() {
+		return new DefaultSocialHttpRequestFactory();
+	}
 }
